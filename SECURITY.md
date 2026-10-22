@@ -1,7 +1,7 @@
 # Security
 
 Report vulnerabilities privately through
-[GitHub private vulnerability reporting](https://github.com/Sabia-Partners/sabia-claude-plugin/security/advisories/new)
+[GitHub private vulnerability reporting](https://github.com/Sabia-Partners/sabia-claude-desktop/security/advisories/new)
 or by email to hello@sabiapartners.ca. Please do not open a public issue for a
 vulnerability.
 

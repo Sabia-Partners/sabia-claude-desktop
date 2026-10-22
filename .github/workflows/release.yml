@@ -1,4 +1,4 @@
-name: Release plugin
+name: Release
 on:
   push:
     tags: ['v*']
@@ -17,10 +17,10 @@ jobs:
           node-version: 22
       - run: pnpm install --frozen-lockfile
       - run: pnpm check && pnpm test
-      - run: tar -czf sabia-claude-plugin.tar.gz .claude-plugin plugins contracts cowork README.md SECURITY.md LICENSE CHANGELOG.md
+      - run: tar -czf sabia-claude-desktop.tar.gz cowork README.md SECURITY.md LICENSE CHANGELOG.md
       # The Claude Desktop extension. Sabia links to
       # releases/latest/download/sabia.mcpb, so the asset name must not change.
       - run: pnpm build:extension
-      - run: gh release create "$GITHUB_REF_NAME" sabia-claude-plugin.tar.gz dist/sabia.mcpb --verify-tag --generate-notes
+      - run: gh release create "$GITHUB_REF_NAME" sabia-claude-desktop.tar.gz dist/sabia.mcpb --verify-tag --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
