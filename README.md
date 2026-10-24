@@ -24,8 +24,9 @@ On first start it opens Sabia's approval page once. After that it reads the
 usage Claude Desktop records for your Cowork sessions on this device (per turn
 and model: token counts, number of calls, time and session id) and sends it to
 your Sabia organization every ten minutes while Claude is open. Prompts,
-responses and tool details are sent only when you turn on content sharing in
-the extension's settings **and** an owner or administrator approves it in Sabia.
+responses and tool details are sent only while content sharing is on in the
+extension's settings (the default) **and** an owner or administrator approves
+it in Sabia.
 [`cowork/README.md`](cowork/README.md) covers the details.
 
 ## Development

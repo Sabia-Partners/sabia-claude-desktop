@@ -80,7 +80,7 @@ async function connect() {
   const deviceId = existingState?.deviceId || randomUUID();
   const verifier = randomBytes(32).toString("base64url");
   const codeChallenge = createHash("sha256").update(verifier).digest("hex");
-  const toolDetails = Boolean(options["tool-details"]);
+  const toolDetails = !options["no-tool-details"];
 
   const response = await fetch(new URL("/api/v1/telemetry/connect", baseUrl), {
     method: "POST",
@@ -91,7 +91,7 @@ async function connect() {
       deviceId,
       deviceName: options["device-name"] || `${hostname() || "Cowork"} (Cowork)`,
       codeChallenge,
-      // Token-only by default. The wider grant retains a reduced tool
+      // Asked for unless --no-tool-details. The grant retains a reduced tool
       // extract — never the envelope — and the approval screen says so.
       rawCapture: toolDetails,
     }),
@@ -137,7 +137,7 @@ async function connectLocal() {
   const deviceId = existingState?.deviceId || randomUUID();
   const verifier = randomBytes(32).toString("base64url");
   const codeChallenge = createHash("sha256").update(verifier).digest("hex");
-  const content = Boolean(options.content);
+  const content = !options["no-content"];
 
   const response = await fetch(new URL("/api/v1/telemetry/connect", baseUrl), {
     method: "POST",
@@ -435,7 +435,7 @@ function printAdminSettings(state) {
       "",
       state.toolDetails
         ? "Tool details were granted. Sabia keeps a reduced per-tool extract and the arguments of Google Drive content mutations only — and only when the admin's otlpContentCapture setting includes toolDetails."
-        : "Token activity only. Re-run connect --tool-details to let Sabia identify Google Drive files Cowork produces.",
+        : "Token activity only. Re-run connect without --no-tool-details to let Sabia identify Google Drive files Cowork produces.",
       "",
     ].join("\n"),
   );
@@ -473,7 +473,7 @@ function parseArguments(args) {
     if (!argument.startsWith("--")) throw new Error(`unexpected argument: ${argument}`);
     const key = argument.slice(2);
     if (
-      ["no-open", "local-only", "tool-details", "local", "content", "no-schedule", "no-sync"].includes(key)
+      ["no-open", "local-only", "tool-details", "no-tool-details", "local", "content", "no-content", "no-schedule", "no-sync"].includes(key)
     ) {
       options[key] = true;
     } else {
@@ -529,11 +529,12 @@ function usage() {
     [
       "Usage: node sabia.mjs <connect|settings|status|record-output|disconnect> [options]",
       "",
-      "  connect [--tool-details] [--base-url <url>] [--device-name <name>] [--no-open]",
-      "  connect --local [--content] [--no-schedule] [--no-sync]",
+      "  connect [--no-tool-details] [--base-url <url>] [--device-name <name>] [--no-open]",
+      "                  Asks for tool details unless --no-tool-details.",
+      "  connect --local [--no-content] [--no-schedule] [--no-sync]",
       "                  Share this device's Cowork sessions from the desktop app's local",
-      "                  logs (Pro/Max plans). --content asks to include prompts, responses",
-      "                  and tool details once an owner or administrator approves.",
+      "                  logs (Pro/Max plans). Asks to include prompts, responses and tool",
+      "                  details once an owner or administrator approves, unless --no-content.",
       "  sync            Send Cowork usage recorded since the last sync",
       "  schedule | unschedule   Background sync every 10 minutes (macOS)",
       "  disconnect --local      Revoke this device and stop the background sync",

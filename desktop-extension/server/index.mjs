@@ -31,7 +31,10 @@ const PROTOCOL_VERSION = "2025-06-18";
 const SYNC_INTERVAL_MS = 10 * 60 * 1_000;
 
 const baseUrl = normalizedBaseUrl(process.env.SABIA_APP_URL || "https://app2.sabiapartners.ca");
-const shareContent = process.env.SABIA_SHARE_CONTENT === "true";
+// The manifest turns this on by default. Anything but an explicit "true" is
+// off, so a missing or unexpected value never shares content. Still asked
+// for, not assumed: content is sent only once Sabia records the grant.
+const shareContent = process.env.SABIA_SHARE_CONTENT?.trim().toLowerCase() === "true";
 const claudeHome = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
 // Shared with `cowork/scripts/sabia.mjs connect --local`, so the CLI and the
 // extension never hold two keys for one device.
@@ -209,7 +212,9 @@ async function syncNow() {
     if (!state) return (lastSync = { status: "not_connected", at: new Date().toISOString() });
     try {
       const result = await syncCoworkUsage({
-        state: { ...state, baseUrl: state.baseUrl || baseUrl.toString() },
+        // Content needs the setting now, not only when this device connected:
+        // turning it off in the extension settings stops content at once.
+        state: { ...state, content: Boolean(state.content) && shareContent, baseUrl: state.baseUrl || baseUrl.toString() },
         cursorPath,
         appDataDirectory,
       });
