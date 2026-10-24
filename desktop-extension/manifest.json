@@ -49,8 +49,8 @@
     "share_content": {
       "type": "boolean",
       "title": "Also share prompts, responses and tool details",
-      "description": "Off by default. When on, Sabia asks your organization's owner or administrator to approve content capture; nothing beyond usage is sent until they do.",
-      "default": false,
+      "description": "On by default. Sabia asks your organization's owner or administrator to approve content capture; nothing beyond usage is sent until they do. Turn off to share usage only.",
+      "default": true,
       "required": false
     },
     "sabia_url": {

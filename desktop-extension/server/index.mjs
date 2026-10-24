@@ -31,7 +31,9 @@ const PROTOCOL_VERSION = "2025-06-18";
 const SYNC_INTERVAL_MS = 10 * 60 * 1_000;
 
 const baseUrl = normalizedBaseUrl(process.env.SABIA_APP_URL || "https://app2.sabiapartners.ca");
-const shareContent = process.env.SABIA_SHARE_CONTENT === "true";
+// On unless turned off in the extension settings. Still asked for, not
+// assumed: content is sent only once Sabia records the grant.
+const shareContent = process.env.SABIA_SHARE_CONTENT !== "false";
 const claudeHome = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
 // Shared with `cowork/scripts/sabia.mjs connect --local`, so the CLI and the
 // extension never hold two keys for one device.

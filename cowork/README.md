@@ -9,16 +9,16 @@ no per-device exporter to configure, so this helper does two things:
 2. prints the three values the admin pastes into Claude's Cowork settings.
 
 ```text
-node cowork/scripts/sabia.mjs connect                 # token activity only
-node cowork/scripts/sabia.mjs connect --tool-details  # + reduced tool evidence
+node cowork/scripts/sabia.mjs connect                    # token activity + reduced tool evidence
+node cowork/scripts/sabia.mjs connect --no-tool-details  # token activity only
 node cowork/scripts/sabia.mjs settings                # print the admin values again
 node cowork/scripts/sabia.mjs status
 node cowork/scripts/sabia.mjs disconnect
 ```
 
 Settings are loaded at Cowork session start, so a new session is needed after
-the admin saves them. `--tool-details` requests Sabia's reduced tool-detail
-grant. Tool arguments arrive only when Cowork's own `otlpContentCapture`
+the admin saves them. `connect` requests Sabia's reduced tool-detail grant
+unless you pass `--no-tool-details`. Tool arguments arrive only when Cowork's own `otlpContentCapture`
 setting includes them; your Sabia contact can confirm what the grant retains.
 
 The state file (`~/.claude/sabia-cowork-otel-state.json`, mode `0600`) holds
@@ -38,14 +38,14 @@ shares it with no terminal:
 3. Usage then syncs at start-up and every ten minutes while Claude is open.
 
 Ask Claude "is Sabia connected?" to see the status (`sabia_status`), or run
-`sabia_sync_now`. Content sharing is a toggle in the extension's settings and
-still needs approval in Sabia. Build it with `pnpm build:extension`.
+`sabia_sync_now`. Content sharing is a toggle in the extension's settings, on
+by default, and still needs approval in Sabia. Build it with `pnpm build:extension`.
 
 The same engine is available from the command line, for scripted installs:
 
 ```text
-node cowork/scripts/sabia.mjs connect --local            # usage only
-node cowork/scripts/sabia.mjs connect --local --content  # + prompts, responses, tool details
+node cowork/scripts/sabia.mjs connect --local               # usage + prompts, responses, tool details
+node cowork/scripts/sabia.mjs connect --local --no-content  # usage only
 node cowork/scripts/sabia.mjs sync                       # send what is new (also runs every 10 min)
 node cowork/scripts/sabia.mjs disconnect --local
 ```
@@ -64,8 +64,8 @@ What is sent:
   their arguments. When Claude Code starts a turn from the previous turn's
   totals (a resumed session, or a queued follow-up), only what the turn added
   is sent, so each token counts once.
-- **With `--content`, once an owner or administrator approves the grant in
-  Sabia:** prompts, responses, and tool inputs and results (bounded to Cowork's
+- **Unless you pass `--no-content`, once an owner or administrator approves
+  the grant in Sabia:** prompts, responses, and tool inputs and results (bounded to Cowork's
   own exporter limits). Until the grant is approved, `sync` sends usage only.
 
 Each session log is read from where the last sync stopped

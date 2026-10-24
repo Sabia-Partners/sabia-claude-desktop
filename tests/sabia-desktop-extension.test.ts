@@ -91,12 +91,14 @@ afterEach(async () => {
   await rm(workspace, { recursive: true, force: true });
 });
 
-function start() {
+function start(shareContent: string | null = "false") {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  delete env.SABIA_SHARE_CONTENT;
   const proc = spawn(process.execPath, [serverPath], {
     env: {
-      ...process.env,
+      ...env,
       SABIA_APP_URL: baseUrl,
-      SABIA_SHARE_CONTENT: "false",
+      ...(shareContent === null ? {} : { SABIA_SHARE_CONTENT: shareContent }),
       SABIA_NO_BROWSER: "1",
       SABIA_CLAUDE_APP_DATA: join(workspace, "Claude"),
       CLAUDE_CONFIG_DIR: join(workspace, ".claude"),
@@ -135,6 +137,20 @@ describe("Sabia Desktop Extension", () => {
     expect(init.result).toMatchObject({ serverInfo: { name: "sabia" }, capabilities: { tools: {} } });
     const list = await request("tools/list");
     expect(list.result!.tools!.map((tool) => tool.name)).toEqual(["sabia_status", "sabia_connect", "sabia_sync_now"]);
+  });
+
+  it.each([
+    ["the manifest default", "true"],
+    ["no setting at all", null],
+  ])("asks for content capture with %s", async (_label, shareContent) => {
+    start(shareContent);
+    await until(() => connectRequests.length === 1);
+    expect(connectRequests[0]).toMatchObject({ source: "cowork", rawCapture: true });
+  });
+
+  it("defaults content sharing on in the manifest", async () => {
+    const manifest = JSON.parse(await readFile(join(process.cwd(), "desktop-extension/manifest.json"), "utf8"));
+    expect(manifest.user_config.share_content.default).toBe(true);
   });
 
   it("connects on first launch, then syncs Cowork usage without being asked", async () => {
