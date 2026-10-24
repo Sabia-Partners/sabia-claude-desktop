@@ -21,6 +21,7 @@ let connectRequests: unknown[];
 let posts: string[];
 let approved: boolean;
 let revoked: boolean;
+let contentGrant: boolean;
 
 beforeAll(async () => {
   await run(process.execPath, ["scripts/pack-desktop-extension.mjs"]);
@@ -42,6 +43,7 @@ beforeEach(async () => {
   posts = [];
   approved = false;
   revoked = false;
+  contentGrant = false;
   server = createServer((request, response) => {
     const chunks: Buffer[] = [];
     request.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -71,7 +73,7 @@ beforeEach(async () => {
       }
       if (revoked) return json(401, {});
       if (request.method === "GET" && request.url === "/api/v1/telemetry/connection") {
-        return json(200, { rawCapture: false });
+        return json(200, { rawCapture: contentGrant });
       }
       if (request.method === "POST" && request.url === "/api/v1/telemetry/otlp/v1/logs") {
         posts.push(body);
@@ -139,13 +141,48 @@ describe("Sabia Desktop Extension", () => {
     expect(list.result!.tools!.map((tool) => tool.name)).toEqual(["sabia_status", "sabia_connect", "sabia_sync_now"]);
   });
 
-  it.each([
-    ["the manifest default", "true"],
-    ["no setting at all", null],
-  ])("asks for content capture with %s", async (_label, shareContent) => {
-    start(shareContent);
+  it("asks for content capture with the manifest default", async () => {
+    start("true");
     await until(() => connectRequests.length === 1);
     expect(connectRequests[0]).toMatchObject({ source: "cowork", rawCapture: true });
+  });
+
+  it.each([
+    ["no setting at all", null],
+    ["an empty value", ""],
+    ["an unsubstituted placeholder", "${user_config.share_content}"],
+  ])("does not ask for content capture with %s", async (_label, shareContent) => {
+    start(shareContent);
+    await until(() => connectRequests.length === 1);
+    expect(connectRequests[0]).toMatchObject({ source: "cowork", rawCapture: false });
+  });
+
+  it.each([
+    ["on", "true", true],
+    ["turned off after connecting", "false", false],
+  ])("sends content only while sharing is %s", async (_label, shareContent, expected) => {
+    // A device that connected with content sharing on, and Sabia granted it.
+    await mkdir(join(workspace, ".claude"), { recursive: true });
+    await writeFile(
+      join(workspace, ".claude", "sabia-cowork-local-state.json"),
+      JSON.stringify({
+        deviceId: "device-1",
+        baseUrl,
+        ingestionKeyId: "key-1",
+        ingestionKey,
+        organizationId: "org-1",
+        organizationName: "Sabia Partners",
+        otlpLogsEndpoint: `${baseUrl}/api/v1/telemetry/otlp/v1/logs`,
+        content: true,
+      }),
+    );
+    contentGrant = true;
+
+    start(shareContent);
+    await until(() => posts.length === 1);
+
+    expect(posts[0]).toContain("api_request");
+    expect(posts[0].includes("a private reply")).toBe(expected);
   });
 
   it("defaults content sharing on in the manifest", async () => {
